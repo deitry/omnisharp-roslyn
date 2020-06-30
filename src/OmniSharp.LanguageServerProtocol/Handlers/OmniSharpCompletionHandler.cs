@@ -29,7 +29,7 @@ namespace OmniSharp.LanguageServerProtocol.Handlers
             { "Delegate", CompletionItemKind.Class }, // need a better option for this.
             { "Enum", CompletionItemKind.Enum },
             { "Interface", CompletionItemKind.Interface },
-            { "Struct", CompletionItemKind.Class }, // TODO: Is struct missing from enum?
+            { "Struct", CompletionItemKind.Struct },
 
             // variables
             { "Local", CompletionItemKind.Variable },
@@ -37,9 +37,9 @@ namespace OmniSharp.LanguageServerProtocol.Handlers
             { "RangeVariable", CompletionItemKind.Variable },
 
             // members
-            { "Const", CompletionItemKind.Value }, // TODO: Is const missing from enum?
+            { "Const", CompletionItemKind.Constant },
             { "EnumMember", CompletionItemKind.Enum },
-            { "Event", CompletionItemKind.Function }, // TODO: Is event missing from enum?
+            { "Event", CompletionItemKind.Event },
             { "Field", CompletionItemKind.Field },
             { "Method", CompletionItemKind.Method },
             { "Property", CompletionItemKind.Property },
