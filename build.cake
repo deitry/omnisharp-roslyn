@@ -114,12 +114,12 @@ Task("InstallDotNetCoreSdk")
 {
     if (!useGlobalDotNetSdk)
     {
-        foreach (var dotnetVersion in buildPlan.DotNetVersions) 
-        {
-            InstallDotNetSdk(env, buildPlan,
-                version: dotnetVersion,
-                installFolder: env.Folders.DotNetSdk);
-        }
+        // foreach (var dotnetVersion in buildPlan.DotNetVersions)
+        // {
+        //     InstallDotNetSdk(env, buildPlan,
+        //         version: dotnetVersion,
+        //         installFolder: env.Folders.DotNetSdk);
+        // }
 
         // Add non-legacy .NET SDK to PATH
         var oldPath = Environment.GetEnvironmentVariable("PATH");
@@ -579,7 +579,7 @@ Task("Build")
 ///  Run all tests.
 /// </summary>
 Task("Test")
-    .IsDependentOn("Setup")
+    // .IsDependentOn("Setup")
     .IsDependentOn("Build")
     .IsDependentOn("PrepareTestAssets")
     .Does(() =>
@@ -912,7 +912,7 @@ Task("Install")
 Task("All")
     .IsDependentOn("Cleanup")
     .IsDependentOn("Build")
-    .IsDependentOn("Test")
+    // .IsDependentOn("Test")
     .IsDependentOn("Publish")
     .IsDependentOn("ExecuteRunScript");
 
