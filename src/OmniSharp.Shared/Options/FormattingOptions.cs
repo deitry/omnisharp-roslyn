@@ -57,6 +57,8 @@ namespace OmniSharp.Options
             NewLineForMembersInObjectInit = true;
             NewLineForMembersInAnonymousTypes = true;
             NewLineForClausesInQuery = true;
+
+            FolderForExternalAnnotations = "";
         }
 
         public bool OrganizeImports { get; set; }
@@ -165,5 +167,6 @@ namespace OmniSharp.Options
 
         public bool NewLineForClausesInQuery { get; set; }
 
+        public string FolderForExternalAnnotations { get; set; }
     }
 }

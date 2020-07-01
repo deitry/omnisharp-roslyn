@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Composition;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Xml;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Completion;
 using Microsoft.CodeAnalysis.Recommendations;
@@ -105,8 +106,12 @@ namespace OmniSharp.Roslyn.CSharp.Services.Intellisense
                             var response = new AutoCompleteResponse()
                             {
                                 CompletionText = item.DisplayText,
-                                DisplayText = item.DisplayText,
-                                Snippet = item.DisplayText,
+                                // заполняется при предложении названия для переменной
+                                // Description = "myy Description of AutoCompleteResponse",
+                                // MethodHeader = "myy MethodHeader",
+                                // ReturnType = "myy ReturnType",
+                                DisplayText = item.DisplayText, //+ "\n myy Hello from autoComplete",
+                                Snippet = item.DisplayText, // + "\n myy snippet",
                                 Kind = request.WantKind ? item.Tags.First() : null,
                                 IsSuggestionMode = isSuggestionMode,
                                 Preselect = preselect
@@ -173,6 +178,34 @@ namespace OmniSharp.Roslyn.CSharp.Services.Intellisense
             return completions;
         }
 
+        private string GetDocsForSymbol(ISymbol symbol)
+        {
+            var pathToExternalAnnotations = _formattingOptions.FolderForExternalAnnotations
+                + System.IO.Path.DirectorySeparatorChar + symbol.ContainingAssembly.Name + ".ExternalAnnotations.xml";
+            if (!System.IO.File.Exists(pathToExternalAnnotations))
+            {
+                return _formattingOptions.NewLine + pathToExternalAnnotations + " not found";
+            }
+
+            var ttt = symbol.ToDisplayString() + _formattingOptions.NewLine;
+
+            XmlDocument xDoc = new XmlDocument();
+            try
+            {
+                xDoc.Load(pathToExternalAnnotations);
+                foreach (XmlNode element in xDoc.DocumentElement)
+                {
+                    if (element?.Attributes?.GetNamedItem("name")?.Value == symbol.ToDisplayString())
+                        ttt += element.InnerXml;
+                }
+            }
+            catch (Exception e)
+            {
+                return "Exception: " + e.Message;
+            }
+            return ttt;
+        }
+
         private AutoCompleteResponse MakeAutoCompleteResponse(AutoCompleteRequest request, ISymbol symbol, string completionText, bool preselect, bool isSuggestionMode, bool includeOptionalParams = true)
         {
             var displayNameGenerator = new SnippetGenerator();
@@ -180,16 +213,31 @@ namespace OmniSharp.Roslyn.CSharp.Services.Intellisense
             displayNameGenerator.IncludeOptionalParameters = includeOptionalParams;
 
             var response = new AutoCompleteResponse();
-            response.CompletionText = completionText;
+            response.CompletionText = completionText; // + "... myCompletionText";
 
             // TODO: Do something more intelligent here
-            response.DisplayText = displayNameGenerator.Generate(symbol);
+            response.DisplayText = displayNameGenerator.Generate(symbol); // + "... myDisplayText";
 
             response.IsSuggestionMode = isSuggestionMode;
 
             if (request.WantDocumentationForEveryCompletionResult)
             {
-                response.Description = DocumentationConverter.ConvertDocumentation(symbol.GetDocumentationCommentXml(), _formattingOptions.NewLine);
+                response.Description = DocumentationConverter.ConvertDocumentation(
+                                            symbol.GetDocumentationCommentXml(),
+                                            _formattingOptions.NewLine) + _formattingOptions.NewLine;
+
+                response.Description += GetDocsForSymbol(symbol);
+
+                var project = this._workspace.CurrentSolution?.GetProject(symbol.ContainingAssembly);
+                if (project != null && !string.IsNullOrEmpty(project.FilePath))
+                {
+                    response.Description += _formattingOptions.NewLine + "Project path: " + project.FilePath;
+                }
+
+                response.Description += _formattingOptions.NewLine
+                                        + "Path to current solution: "
+                                        + this._workspace.CurrentSolution.FilePath;
+                response.Description += _formattingOptions.NewLine + "Assembly: " + symbol.ContainingAssembly;
             }
 
             if (request.WantReturnType)

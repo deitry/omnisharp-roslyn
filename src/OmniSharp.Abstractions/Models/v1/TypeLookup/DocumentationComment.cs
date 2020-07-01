@@ -188,10 +188,10 @@ namespace OmniSharp.Models.TypeLookup
         }
 
         public string GetParameterText(string name)
-            => Array.Find(ParamElements, parameter => parameter.Name == name)?.Documentation ?? string.Empty;
+            => Array.Find(ParamElements, parameter => parameter.Name == name)?.Documentation ?? "parameter";
 
         public string GetTypeParameterText(string name)
-            => Array.Find(TypeParamElements, typeParam => typeParam.Name == name)?.Documentation ?? string.Empty;
+            => Array.Find(TypeParamElements, typeParam => typeParam.Name == name)?.Documentation ?? "type parameter";
 
         public static readonly DocumentationComment Empty = new DocumentationComment();
     }

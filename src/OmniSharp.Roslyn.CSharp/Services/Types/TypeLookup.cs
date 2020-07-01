@@ -48,14 +48,17 @@ namespace OmniSharp.Roslyn.CSharp.Services.Types
                 var symbol = await SymbolFinder.FindSymbolAtPositionAsync(semanticModel, position, _workspace);
                 if (symbol != null)
                 {
-                    response.Type = symbol.Kind == SymbolKind.NamedType ? 
-                        symbol.ToDisplayString(DefaultFormat) : 
+                    response.Type = symbol.Kind == SymbolKind.NamedType ?
+                        symbol.ToDisplayString(DefaultFormat) :
                         symbol.ToMinimalDisplayString(semanticModel, position, MinimalFormat);
 
                     if (request.IncludeDocumentation)
                     {
                         response.Documentation = DocumentationConverter.ConvertDocumentation(symbol.GetDocumentationCommentXml(), _formattingOptions.NewLine);
-                        response.StructuredDocumentation = DocumentationConverter.GetStructuredDocumentation(symbol, _formattingOptions.NewLine);
+                        response.StructuredDocumentation = DocumentationConverter.GetStructuredDocumentation(
+                            symbol,
+                            _formattingOptions.FolderForExternalAnnotations,
+                            _formattingOptions.NewLine);
                     }
                 }
             }

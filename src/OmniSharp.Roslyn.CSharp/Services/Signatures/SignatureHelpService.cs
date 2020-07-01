@@ -9,6 +9,7 @@ using Microsoft.CodeAnalysis.Text;
 using OmniSharp.Mef;
 using OmniSharp.Models;
 using OmniSharp.Models.SignatureHelp;
+using OmniSharp.Options;
 using OmniSharp.Roslyn.CSharp.Services.Documentation;
 
 namespace OmniSharp.Roslyn.CSharp.Services.Signatures
@@ -17,11 +18,13 @@ namespace OmniSharp.Roslyn.CSharp.Services.Signatures
     public class SignatureHelpService : IRequestHandler<SignatureHelpRequest, SignatureHelpResponse>
     {
         private readonly OmniSharpWorkspace _workspace;
+        private readonly FormattingOptions _formattingOptions;
 
         [ImportingConstructor]
-        public SignatureHelpService(OmniSharpWorkspace workspace)
+        public SignatureHelpService(OmniSharpWorkspace workspace, FormattingOptions options)
         {
             _workspace = workspace;
+            _formattingOptions = options;
         }
 
         public async Task<SignatureHelpResponse> Handle(SignatureHelpRequest request)
@@ -82,7 +85,7 @@ namespace OmniSharp.Roslyn.CSharp.Services.Signatures
 
                 foreach (var methodOverload in methodGroup)
                 {
-                    var signature = BuildSignature(methodOverload);
+                    var signature = BuildSignature(methodOverload, _formattingOptions.FolderForExternalAnnotations);
                     signaturesSet.Add(signature);
 
                     var score = InvocationScore(methodOverload, types);
@@ -165,13 +168,13 @@ namespace OmniSharp.Roslyn.CSharp.Services.Signatures
             return score;
         }
 
-        private static SignatureHelpItem BuildSignature(IMethodSymbol symbol)
+        private static SignatureHelpItem BuildSignature(IMethodSymbol symbol, string folderForExternalAnnotations)
         {
             var signature = new SignatureHelpItem();
             signature.Documentation = symbol.GetDocumentationCommentXml();
             signature.Name = symbol.MethodKind == MethodKind.Constructor ? symbol.ContainingType.Name : symbol.Name;
             signature.Label = symbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
-            signature.StructuredDocumentation = DocumentationConverter.GetStructuredDocumentation(symbol);
+            signature.StructuredDocumentation = DocumentationConverter.GetStructuredDocumentation(symbol, folderForExternalAnnotations);
 
             signature.Parameters = symbol.Parameters.Select(parameter =>
             {

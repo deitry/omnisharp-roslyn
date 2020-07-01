@@ -135,12 +135,20 @@ namespace OmniSharp.Roslyn.CSharp.Services.Documentation
             return cref + " ";
         }
 
-        public static DocumentationComment GetStructuredDocumentation(string xmlDocumentation, string lineEnding)
+        public static DocumentationComment GetStructuredDocumentation(
+            string xmlDocumentation,
+            string externalDocumentation,
+            string lineEnding)
         {
-            return DocumentationComment.From(xmlDocumentation, lineEnding);
+            if (!externalDocumentation.Contains("<summary>"))
+                externalDocumentation = "<summary>" + externalDocumentation + "</summary>";
+            return DocumentationComment.From(xmlDocumentation + lineEnding + externalDocumentation, lineEnding);
         }
 
-        public static DocumentationComment GetStructuredDocumentation(ISymbol symbol, string lineEnding = "\n")
+        public static DocumentationComment GetStructuredDocumentation(
+            ISymbol symbol,
+            string folderForExternalAnnotations,
+            string lineEnding = "\n")
         {
             switch (symbol)
             {
@@ -151,29 +159,76 @@ namespace OmniSharp.Roslyn.CSharp.Services.Documentation
                 case IAliasSymbol alias:
                     return new DocumentationComment(summaryText: GetAliasDocumentation(alias, lineEnding));
                 default:
-                    return GetStructuredDocumentation(symbol.GetDocumentationCommentXml(), lineEnding);
+                    return GetStructuredDocumentation(
+                        symbol.GetDocumentationCommentXml(),
+                        GetExternalDocumentation(symbol, lineEnding, folderForExternalAnnotations),
+                        lineEnding);
             }
         }
 
-        private static string GetParameterDocumentation(IParameterSymbol parameter, string lineEnding = "\n")
+        private static string GetExternalDocumentation(
+            ISymbol symbol,
+            string lineEnding,
+            string folderForExternalAnnotations)
+        {
+            var pathToExternalAnnotations = folderForExternalAnnotations
+                + System.IO.Path.DirectorySeparatorChar + symbol.ContainingAssembly.Name + ".ExternalAnnotations.xml";
+            if (!System.IO.File.Exists(pathToExternalAnnotations))
+            {
+                return lineEnding + pathToExternalAnnotations + " not found";
+            }
+
+            var ttt = symbol.ToDisplayString() + lineEnding;
+
+            XmlDocument xDoc = new XmlDocument();
+            try
+            {
+                xDoc.Load(pathToExternalAnnotations);
+                foreach (XmlNode element in xDoc.DocumentElement)
+                {
+                    if (element?.Attributes?.GetNamedItem("name")?.Value == symbol.ToDisplayString())
+                        ttt += element.InnerXml;
+                }
+            }
+            catch (Exception e)
+            {
+                return "Exception: " + e.Message;
+            }
+            ttt += lineEnding + "Assembly: " + symbol.ContainingAssembly;
+            return ttt;
+        }
+
+        private static string GetParameterDocumentation(
+            IParameterSymbol parameter,
+            string folderForExternalAnnotations,
+            string lineEnding = "\n")
         {
             var contaningSymbolDef = parameter.ContainingSymbol.OriginalDefinition;
-            return GetStructuredDocumentation(contaningSymbolDef.GetDocumentationCommentXml(), lineEnding)
+            var doc = contaningSymbolDef.GetDocumentationCommentXml();
+            var external = GetExternalDocumentation(contaningSymbolDef, lineEnding, folderForExternalAnnotations);
+            return GetStructuredDocumentation(doc, external, lineEnding)
                     .GetParameterText(parameter.Name);
         }
 
-        private static string GetTypeParameterDocumentation(ITypeParameterSymbol typeParam, string lineEnding = "\n")
+        private static string GetTypeParameterDocumentation(
+            ITypeParameterSymbol typeParam,
+            string folderForExternalAnnotations,
+            string lineEnding = "\n")
         {
             var contaningSymbol = typeParam.ContainingSymbol;
-            return GetStructuredDocumentation(contaningSymbol.GetDocumentationCommentXml(), lineEnding)
+            var external = GetExternalDocumentation(contaningSymbol, lineEnding, folderForExternalAnnotations);
+            return GetStructuredDocumentation(contaningSymbol.GetDocumentationCommentXml(), external, lineEnding)
                     .GetTypeParameterText(typeParam.Name);
         }
 
-        private static string GetAliasDocumentation(IAliasSymbol alias, string lineEnding = "\n")
+        private static string GetAliasDocumentation(
+            IAliasSymbol alias,
+            string folderForExternalAnnotations,
+            string lineEnding = "\n")
         {
             var target = alias.Target;
-            return GetStructuredDocumentation(target.GetDocumentationCommentXml(), lineEnding).SummaryText;
+            var external = GetExternalDocumentation(target, lineEnding, folderForExternalAnnotations);
+            return GetStructuredDocumentation(target.GetDocumentationCommentXml(), external, lineEnding).SummaryText;
         }
     }
 }
-
