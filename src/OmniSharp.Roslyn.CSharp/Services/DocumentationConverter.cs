@@ -178,7 +178,7 @@ namespace OmniSharp.Roslyn.CSharp.Services.Documentation
                 return lineEnding + pathToExternalAnnotations + " not found";
             }
 
-            var ttt = symbol.ToDisplayString() + lineEnding;
+            var ttt = lineEnding + symbol.ToDisplayString() + lineEnding;
 
             XmlDocument xDoc = new XmlDocument();
             try
@@ -187,7 +187,7 @@ namespace OmniSharp.Roslyn.CSharp.Services.Documentation
                 foreach (XmlNode element in xDoc.DocumentElement)
                 {
                     if (element?.Attributes?.GetNamedItem("name")?.Value == symbol.ToDisplayString())
-                        ttt += element.InnerXml;
+                        ttt += lineEnding + element.InnerXml;
                 }
             }
             catch (Exception e)

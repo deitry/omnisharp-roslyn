@@ -85,7 +85,10 @@ namespace OmniSharp.Roslyn.CSharp.Services.Signatures
 
                 foreach (var methodOverload in methodGroup)
                 {
-                    var signature = BuildSignature(methodOverload, _formattingOptions.FolderForExternalAnnotations);
+                    var signature = BuildSignature(
+                        methodOverload,
+                        _formattingOptions.FolderForExternalAnnotations,
+                        _formattingOptions.NewLine);
                     signaturesSet.Add(signature);
 
                     var score = InvocationScore(methodOverload, types);
@@ -168,13 +171,16 @@ namespace OmniSharp.Roslyn.CSharp.Services.Signatures
             return score;
         }
 
-        private static SignatureHelpItem BuildSignature(IMethodSymbol symbol, string folderForExternalAnnotations)
+        private static SignatureHelpItem BuildSignature(
+            IMethodSymbol symbol,
+            string folderForExternalAnnotations,
+            string newLine)
         {
             var signature = new SignatureHelpItem();
             signature.Documentation = symbol.GetDocumentationCommentXml();
             signature.Name = symbol.MethodKind == MethodKind.Constructor ? symbol.ContainingType.Name : symbol.Name;
             signature.Label = symbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
-            signature.StructuredDocumentation = DocumentationConverter.GetStructuredDocumentation(symbol, folderForExternalAnnotations);
+            signature.StructuredDocumentation = DocumentationConverter.GetStructuredDocumentation(symbol, folderForExternalAnnotations, newLine);
 
             signature.Parameters = symbol.Parameters.Select(parameter =>
             {
